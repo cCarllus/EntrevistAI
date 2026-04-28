@@ -1,0 +1,8 @@
+.git
+node_modules
+dist
+dist-ssr
+src-tauri/target
+src-tauri/gen
+npm-debug.log*
+.DS_Store
