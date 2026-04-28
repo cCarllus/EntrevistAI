@@ -1,3 +1,5 @@
+mod audio_capture;
+
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 #[cfg(not(target_os = "macos"))]
@@ -69,6 +71,26 @@ fn save_settings(app: tauri::AppHandle, settings: AppSettings) -> Result<(), Str
     write_json(settings_path(&app)?, &settings)
 }
 
+#[tauri::command]
+fn start_audio_capture() -> Result<String, String> {
+    audio_capture::start_audio_capture()
+}
+
+#[tauri::command]
+fn stop_audio_capture() -> Result<String, String> {
+    audio_capture::stop_audio_capture()
+}
+
+#[tauri::command]
+fn get_audio_chunk() -> Vec<f32> {
+    audio_capture::get_audio_chunk()
+}
+
+#[tauri::command]
+fn get_audio_capture_status() -> audio_capture::AudioCaptureStatus {
+    audio_capture::get_audio_capture_status()
+}
+
 fn context_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app_data_dir(app)?.join("context.json"))
 }
@@ -134,7 +156,11 @@ pub fn run() {
             load_context,
             save_context,
             load_settings,
-            save_settings
+            save_settings,
+            start_audio_capture,
+            stop_audio_capture,
+            get_audio_chunk,
+            get_audio_capture_status
         ])
         .run(tauri::generate_context!())
         .expect("erro ao executar EntrevistAI");

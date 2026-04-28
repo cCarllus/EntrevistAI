@@ -1,21 +1,44 @@
 <script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+  import AudioStatus from './AudioStatus.svelte';
   import FileUploader from './FileUploader.svelte';
+  import {
+    getAudioCaptureStatus,
+    startAudioCapture,
+    startAudioChunkPolling,
+    stopAudioCapture,
+    type AudioCaptureStatus
+  } from '../services/audioService';
   import { loadContext, loadSettings, saveContext, saveSettings } from '../services/contextStore';
   import { sendPreparationMessage } from '../services/geminiService';
   import { emptyContext, emptySettings, type AppSettings, type InterviewContext } from '../types';
 
+  const defaultAudioStatus: AudioCaptureStatus = {
+    status: 'Stopped',
+    message: 'Stopped',
+    lastAmplitude: 0,
+    sampleRate: 16000,
+    channels: 1,
+    chunkSamples: 8000
+  };
+
   let context: InterviewContext = emptyContext();
   let settings: AppSettings = emptySettings();
+  let audioStatus: AudioCaptureStatus = defaultAudioStatus;
+  let audioAmplitude = 0;
   let userMessage = '';
   let errorMessage = '';
   let successMessage = '';
   let isBooting = true;
   let isChatLoading = false;
+  let isAudioBusy = false;
   let saveTimer: number | undefined;
   let settingsSaveTimer: number | undefined;
+  let stopAudioPolling: (() => void) | undefined;
   let hasLoaded = false;
 
   $: canStartInterview = Boolean(context.cvText.trim() && context.jobText.trim());
+  $: isAudioListening = audioStatus.status === 'Listening';
   $: contextSummary = [
     { label: 'Currículo', value: context.cvText.trim() ? 'Carregado' : 'Pendente' },
     { label: 'Vaga', value: context.jobText.trim() ? 'Carregada' : 'Pendente' },
@@ -23,6 +46,18 @@
   ];
 
   loadInitialData();
+
+  onMount(() => {
+    refreshAudioStatus().then(() => {
+      if (audioStatus.status === 'Listening') {
+        beginAudioPolling();
+      }
+    });
+  });
+
+  onDestroy(() => {
+    stopAudioPolling?.();
+  });
 
   async function loadInitialData() {
     try {
@@ -35,6 +70,42 @@
       isBooting = false;
       hasLoaded = true;
     }
+  }
+
+  async function refreshAudioStatus() {
+    try {
+      audioStatus = await getAudioCaptureStatus();
+      audioAmplitude = audioStatus.lastAmplitude;
+    } catch (error) {
+      audioStatus = {
+        ...defaultAudioStatus,
+        status: 'Error',
+        message: error instanceof Error ? error.message : 'Não foi possível ler o status do áudio.'
+      };
+    }
+  }
+
+  function beginAudioPolling() {
+    stopAudioPolling?.();
+    stopAudioPolling = startAudioChunkPolling(
+      (chunk, amplitude) => {
+        audioAmplitude = amplitude;
+
+        if (chunk.length > 0 && audioStatus.status === 'Listening') {
+          audioStatus = { ...audioStatus, lastAmplitude: amplitude };
+        }
+      },
+      (error) => {
+        errorMessage = error.message;
+        refreshAudioStatus();
+      }
+    );
+  }
+
+  function stopPolling() {
+    stopAudioPolling?.();
+    stopAudioPolling = undefined;
+    audioAmplitude = 0;
   }
 
   function updateContext(update: Partial<InterviewContext>) {
@@ -127,9 +198,42 @@
       return;
     }
 
-    await saveContext(context);
-    successMessage = 'Contexto salvo. Pronto para iniciar o próximo passo da entrevista.';
+    isAudioBusy = true;
     errorMessage = '';
+    successMessage = '';
+
+    try {
+      await saveContext(context);
+      const message = await startAudioCapture();
+      await refreshAudioStatus();
+      beginAudioPolling();
+      successMessage = `${message} Contexto salvo para o modo entrevista.`;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível iniciar a captura de áudio.';
+      errorMessage = message;
+      audioStatus = { ...defaultAudioStatus, status: 'Error', message };
+    } finally {
+      isAudioBusy = false;
+    }
+  }
+
+  async function stopInterviewMode() {
+    isAudioBusy = true;
+    errorMessage = '';
+    successMessage = '';
+
+    try {
+      const message = await stopAudioCapture();
+      stopPolling();
+      await refreshAudioStatus();
+      successMessage = message;
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Não foi possível parar a captura de áudio.';
+    } finally {
+      isAudioBusy = false;
+    }
   }
 </script>
 
@@ -149,7 +253,7 @@
 
       <button
         class="inline-flex min-h-12 items-center justify-center rounded-md bg-focus px-5 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-        disabled={!canStartInterview || isBooting}
+        disabled={!canStartInterview || isBooting || isAudioBusy || isAudioListening}
         on:click={startInterviewMode}
       >
         Iniciar Modo Entrevista
@@ -167,6 +271,15 @@
         {successMessage}
       </div>
     {/if}
+
+    <AudioStatus
+      status={audioStatus}
+      amplitude={audioAmplitude}
+      disabled={!canStartInterview || isBooting}
+      isBusy={isAudioBusy}
+      on:start={startInterviewMode}
+      on:stop={stopInterviewMode}
+    />
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
       <section class="space-y-5">
