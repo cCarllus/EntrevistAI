@@ -70,6 +70,67 @@ export async function sendPreparationMessage(
   return text;
 }
 
+export async function translateInterviewTranscript(
+  apiKey: string,
+  transcript: string,
+  recentContext = ''
+): Promise<string> {
+  if (!apiKey.trim()) {
+    throw new Error('Configure sua API Key do Gemini antes de traduzir.');
+  }
+
+  if (!navigator.onLine) {
+    throw new Error('Gemini precisa de conexão com a internet.');
+  }
+
+  const prompt = [
+    'Traduza para português brasileiro natural e claro.',
+    'Preserve o sentido, o tom conversacional e hesitações relevantes, mas corrija quebras artificiais de palavras da transcrição streaming.',
+    'Responda somente com a tradução. Não use markdown, títulos, comentários ou explicações.',
+    '',
+    'CONTEXTO RECENTE:',
+    recentContext || 'Sem contexto anterior.',
+    '',
+    'TRANSCRIÇÃO EM INGLÊS A TRADUZIR:',
+    transcript
+  ].join('\n');
+
+  const response = await fetch(`${geminiEndpoint}?key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1200
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Gemini não respondeu agora. Verifique a API Key e sua conexão.');
+  }
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((part: { text?: string }) => part.text ?? '')
+    .join('')
+    .trim();
+
+  if (!text) {
+    throw new Error('Gemini retornou uma tradução vazia.');
+  }
+
+  return text;
+}
+
 function formatMessage(message: ChatMessage): string {
   const author = message.role === 'user' ? 'Usuário' : 'Gemini';
   return `${author}: ${message.content}`;

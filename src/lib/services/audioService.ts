@@ -17,7 +17,7 @@ const stoppedStatus: AudioCaptureStatus = {
   lastAmplitude: 0,
   sampleRate: 16000,
   channels: 1,
-  chunkSamples: 8000
+  chunkSamples: 6400
 };
 
 const isTauri = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
@@ -81,7 +81,7 @@ export function startAudioChunkPolling(
     } finally {
       isPolling = false;
     }
-  }, 500);
+  }, 400);
 
   return () => window.clearInterval(timer);
 }

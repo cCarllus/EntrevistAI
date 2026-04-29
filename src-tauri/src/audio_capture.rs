@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::sync::{Arc, Mutex};
 
 const GEMINI_SAMPLE_RATE: usize = 16_000;
-const CHUNK_SECONDS: f32 = 0.5;
+const CHUNK_SECONDS: f32 = 0.4;
 const CHUNK_SAMPLES: usize = (GEMINI_SAMPLE_RATE as f32 * CHUNK_SECONDS) as usize;
 const BUFFER_SECONDS: usize = 30;
 const BUFFER_CAPACITY: usize = GEMINI_SAMPLE_RATE * BUFFER_SECONDS;

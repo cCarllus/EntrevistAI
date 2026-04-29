@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import AudioStatus from './AudioStatus.svelte';
   import FileUploader from './FileUploader.svelte';
+  import TranscriptionPanel from './TranscriptionPanel.svelte';
   import {
     getAudioCaptureStatus,
     startAudioCapture,
@@ -10,7 +11,9 @@
     type AudioCaptureStatus
   } from '../services/audioService';
   import { loadContext, loadSettings, saveContext, saveSettings } from '../services/contextStore';
+  import { geminiLiveService } from '../services/geminiLiveService';
   import { sendPreparationMessage } from '../services/geminiService';
+  import { completeCurrentTurn, resetTranscription } from '../stores/transcriptionStore';
   import { emptyContext, emptySettings, type AppSettings, type InterviewContext } from '../types';
 
   const defaultAudioStatus: AudioCaptureStatus = {
@@ -19,7 +22,7 @@
     lastAmplitude: 0,
     sampleRate: 16000,
     channels: 1,
-    chunkSamples: 8000
+    chunkSamples: 6400
   };
 
   let context: InterviewContext = emptyContext();
@@ -57,6 +60,7 @@
 
   onDestroy(() => {
     stopAudioPolling?.();
+    geminiLiveService.stop();
   });
 
   async function loadInitialData() {
@@ -93,6 +97,7 @@
 
         if (chunk.length > 0 && audioStatus.status === 'Listening') {
           audioStatus = { ...audioStatus, lastAmplitude: amplitude };
+          geminiLiveService.sendAudioSamples(chunk);
         }
       },
       (error) => {
@@ -204,11 +209,14 @@
 
     try {
       await saveContext(context);
+      resetTranscription();
+      await geminiLiveService.start(settings.geminiApiKey);
       const message = await startAudioCapture();
       await refreshAudioStatus();
       beginAudioPolling();
       successMessage = `${message} Contexto salvo para o modo entrevista.`;
     } catch (error) {
+      geminiLiveService.stop();
       const message =
         error instanceof Error ? error.message : 'Não foi possível iniciar a captura de áudio.';
       errorMessage = message;
@@ -225,6 +233,8 @@
 
     try {
       const message = await stopAudioCapture();
+      completeCurrentTurn();
+      geminiLiveService.stop();
       stopPolling();
       await refreshAudioStatus();
       successMessage = message;
@@ -283,6 +293,8 @@
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
       <section class="space-y-5">
+        <TranscriptionPanel />
+
         <div class="rounded-lg border border-white/10 bg-graphite-900/80 p-5 shadow-2xl shadow-black/20">
           <h2 class="text-lg font-semibold text-white">Contexto da entrevista</h2>
           <div class="mt-4 grid gap-3 sm:grid-cols-3">
