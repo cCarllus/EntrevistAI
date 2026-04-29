@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PreparationWindow from './lib/components/PreparationWindow.svelte';
+  import MainWindow from './lib/components/MainWindow.svelte';
 </script>
 
-<PreparationWindow />
+<MainWindow />

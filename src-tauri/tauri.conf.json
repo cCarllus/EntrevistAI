@@ -15,9 +15,11 @@
         "title": "EntrevistAI",
         "width": 1280,
         "height": 860,
-        "minWidth": 960,
-        "minHeight": 720,
+        "minWidth": 900,
+        "minHeight": 600,
         "resizable": true,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
         "label": "main"
       }
     ],

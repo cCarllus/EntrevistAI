@@ -1,35 +1,52 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { responseStore, generateNewSuggestion } from '../stores/responseStore';
   import type { AppSettings, InterviewContext } from '../types';
 
   export let context: InterviewContext;
   export let settings: AppSettings;
+  export let interviewMode = false;
 
   let copyStatus = '';
 
   $: canCopy = Boolean($responseStore.current?.answer);
   $: canRequestNewSuggestion =
-    Boolean($responseStore.current) && $responseStore.status !== 'thinking';
+    Boolean($responseStore.current || $responseStore.lastQuestion) &&
+    $responseStore.status !== 'thinking';
 
   onMount(() => {
-    const handleCopyShortcut = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'c') {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+
+      if (!(event.metaKey || event.ctrlKey)) {
         return;
       }
 
-      if (!canCopy || hasSelectedText() || isTypingTarget(event.target)) {
+      if (key === 'c') {
+        if (!canCopy || hasSelectedText() || isTypingTarget(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        void copyResponse();
         return;
       }
 
-      event.preventDefault();
-      void copyResponse();
+      if (key === 'k') {
+        if (!canRequestNewSuggestion || isTypingTarget(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        void requestNewSuggestion();
+      }
     };
 
-    window.addEventListener('keydown', handleCopyShortcut);
+    window.addEventListener('keydown', handleShortcut);
 
     return () => {
-      window.removeEventListener('keydown', handleCopyShortcut);
+      window.removeEventListener('keydown', handleShortcut);
     };
   });
 
@@ -66,11 +83,15 @@
   }
 </script>
 
-<section class="flex min-h-[320px] flex-col rounded-lg border border-white/10 bg-graphite-900/80 shadow-2xl shadow-black/20">
+<section
+  class={`flex min-h-0 flex-col rounded-lg border border-white/10 bg-zinc-900/95 ${
+    interviewMode ? 'h-full' : 'min-h-[320px] shadow-2xl shadow-black/20'
+  }`}
+>
   <div class="border-b border-white/10 p-5">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="text-lg font-semibold text-white">Resposta sugerida</h2>
+        <h2 class="text-lg font-semibold text-white">Resposta Sugerida</h2>
         <p class="mt-2 text-sm leading-6 text-slate-400">
           Aparece automaticamente após a pausa da entrevistadora.
         </p>
@@ -79,7 +100,7 @@
       <span
         class={`inline-flex rounded-md border px-2.5 py-1 text-xs font-bold ${
           $responseStore.status === 'ready'
-            ? 'border-focus/40 bg-focus/10 text-teal-100'
+            ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100'
             : $responseStore.status === 'thinking'
               ? 'border-amber-300/30 bg-amber-400/10 text-amber-100'
               : $responseStore.status === 'error'
@@ -92,7 +113,7 @@
     </div>
   </div>
 
-  <div class="flex-1 p-5">
+  <div class="min-h-0 flex-1 overflow-y-auto p-5 scroll-smooth">
     {#if $responseStore.status === 'thinking'}
       <div class="rounded-lg border border-amber-300/20 bg-amber-400/10 p-5 text-sm font-semibold text-amber-100">
         Pensando...
@@ -102,7 +123,7 @@
         {$responseStore.error}
       </div>
     {:else if $responseStore.current}
-      <article class="space-y-4">
+      <article class="space-y-4" in:fade={{ duration: 160 }}>
         <div class="rounded-md border border-white/10 bg-black/20 p-4">
           <p class="text-xs font-semibold uppercase tracking-normal text-slate-500">
             Última pergunta
@@ -112,7 +133,7 @@
           </p>
         </div>
 
-        <p class="whitespace-pre-wrap text-xl font-semibold leading-8 text-white">
+        <p class="whitespace-pre-wrap text-xl font-semibold leading-8 text-white transition-opacity duration-200">
           {$responseStore.current.answer}
         </p>
       </article>
@@ -129,12 +150,12 @@
     {/if}
 
     <button
-      class="inline-flex min-h-14 w-full items-center justify-center rounded-md bg-focus px-5 text-base font-bold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+      class="inline-flex min-h-14 w-full items-center justify-center rounded-md bg-emerald-600 px-5 text-base font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
       disabled={!canCopy}
       on:click={copyResponse}
       type="button"
     >
-      Copiar Resposta (Cmd + C)
+      Copiar Resposta (Cmd/Ctrl + C)
     </button>
 
     <button
@@ -143,7 +164,7 @@
       on:click={requestNewSuggestion}
       type="button"
     >
-      Nova Sugestão
+      Nova Sugestão (Cmd/Ctrl + K)
     </button>
   </div>
 </section>

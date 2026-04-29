@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import AudioStatus from './AudioStatus.svelte';
   import FileUploader from './FileUploader.svelte';
+  import InterviewInterface from './InterviewInterface.svelte';
   import ResponsePanel from './ResponsePanel.svelte';
   import TranscriptionPanel from './TranscriptionPanel.svelte';
   import {
@@ -46,6 +47,7 @@
   let settingsSaveTimer: number | undefined;
   let stopAudioPolling: (() => void) | undefined;
   let hasLoaded = false;
+  let showInterviewInterface = false;
 
   $: canStartInterview = Boolean(context.cvText.trim() && context.jobText.trim());
   $: isAudioListening = audioStatus.status === 'Listening';
@@ -225,6 +227,7 @@
       await refreshAudioStatus();
       beginAudioPolling();
       successMessage = `${message} Contexto salvo para o modo entrevista.`;
+      showInterviewInterface = true;
     } catch (error) {
       geminiLiveService.stop();
       const message =
@@ -280,8 +283,56 @@
       })
       .join('\n\n');
   }
+
+  async function openInterviewInterface() {
+    if (!canStartInterview) {
+      return;
+    }
+
+    if (isAudioListening) {
+      showInterviewInterface = true;
+      return;
+    }
+
+    errorMessage = '';
+    successMessage = '';
+
+    try {
+      await saveContext(context);
+      successMessage = 'Contexto salvo para o modo entrevista.';
+      showInterviewInterface = true;
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Não foi possível salvar o contexto localmente.';
+    }
+  }
+
+  function closeInterviewInterface() {
+    showInterviewInterface = false;
+  }
+
+  function clearInterviewHistory() {
+    resetTranscription();
+    resetResponses();
+  }
 </script>
 
+{#if showInterviewInterface}
+  <InterviewInterface
+    {context}
+    {settings}
+    {audioStatus}
+    {audioAmplitude}
+    {errorMessage}
+    {successMessage}
+    {canStartInterview}
+    {isAudioBusy}
+    {startInterviewMode}
+    {stopInterviewMode}
+    {clearInterviewHistory}
+    {closeInterviewInterface}
+  />
+{:else}
 <main class="min-h-screen px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
   <section class="mx-auto flex max-w-7xl flex-col gap-6">
     <header class="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -298,10 +349,10 @@
 
       <button
         class="inline-flex min-h-12 items-center justify-center rounded-md bg-focus px-5 text-sm font-bold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-        disabled={!canStartInterview || isBooting || isAudioBusy || isAudioListening}
-        on:click={startInterviewMode}
+        disabled={!canStartInterview || isBooting || isAudioBusy}
+        on:click={openInterviewInterface}
       >
-        Iniciar Modo Entrevista
+        Abrir Interface de Entrevista
       </button>
     </header>
 
@@ -455,3 +506,4 @@
     </div>
   </section>
 </main>
+{/if}
