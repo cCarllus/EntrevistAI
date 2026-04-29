@@ -87,7 +87,9 @@ export function setTurnTranslation(turnId: string, portuguese: string): void {
   }));
 }
 
-export function completeCurrentTurn(): void {
+export function completeCurrentTurn(): TranscriptionTurn | null {
+  let completedTurn: TranscriptionTurn | null = null;
+
   transcriptionStore.update((state) => {
     if (!state.currentTurn) {
       return state;
@@ -100,7 +102,7 @@ export function completeCurrentTurn(): void {
       return { ...state, currentTurn: null };
     }
 
-    const completedTurn = {
+    completedTurn = {
       ...state.currentTurn,
       isFinal: true,
       updatedAt: new Date().toISOString()
@@ -112,6 +114,8 @@ export function completeCurrentTurn(): void {
       currentTurn: null
     };
   });
+
+  return completedTurn;
 }
 
 export function getCurrentTurn(): TranscriptionTurn | null {

@@ -6,6 +6,7 @@ import {
   setTurnTranslation,
   setTranscriptionStatus
 } from '../stores/transcriptionStore';
+import type { TranscriptionTurn } from '../stores/transcriptionStore';
 
 const liveEndpoint =
   'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
@@ -19,7 +20,7 @@ const liveModelCandidates = [
 const maxQueuedChunks = 30;
 const reconnectDelayMs = 3000;
 const setupTimeoutMs = 6000;
-const turnSilenceMs = 2500;
+const turnSilenceMs = 1200;
 const transcriptionWatchdogMs = 20000;
 const voiceAmplitudeThreshold = 0.01;
 
@@ -58,6 +59,10 @@ type GeminiLiveServerMessage = {
   usageMetadata?: unknown;
 };
 
+interface GeminiLiveStartOptions {
+  onTurnFinalized?: (turn: TranscriptionTurn) => void | Promise<void>;
+}
+
 class GeminiLiveService {
   private socket: WebSocket | null = null;
   private apiKey = '';
@@ -72,8 +77,9 @@ class GeminiLiveService {
   private lastAudioSentAt = 0;
   private lastVoiceAudioSentAt = 0;
   private lastTranscriptionAt = 0;
+  private onTurnFinalized: GeminiLiveStartOptions['onTurnFinalized'];
 
-  async start(apiKey: string): Promise<void> {
+  async start(apiKey: string, options: GeminiLiveStartOptions = {}): Promise<void> {
     const trimmedApiKey = apiKey.trim();
 
     if (!trimmedApiKey) {
@@ -86,6 +92,7 @@ class GeminiLiveService {
 
     this.stop();
     this.apiKey = trimmedApiKey;
+    this.onTurnFinalized = options.onTurnFinalized;
     this.isManuallyClosed = false;
     this.liveModelIndex = 0;
     this.openSocket('connecting');
@@ -95,6 +102,7 @@ class GeminiLiveService {
     this.isManuallyClosed = true;
     this.isSetupComplete = false;
     this.pendingAudioChunks = [];
+    this.onTurnFinalized = undefined;
     window.clearTimeout(this.setupTimer);
     window.clearTimeout(this.reconnectTimer);
     window.clearTimeout(this.turnCompletionTimer);
@@ -297,6 +305,10 @@ class GeminiLiveService {
     if (outputTranscriptionText && !looksLikeProcessLog(outputTranscriptionText)) {
       appendTranslatedResponse(outputTranscriptionText);
     }
+
+    if (serverContent.turnComplete) {
+      void this.finalizeCurrentTurn();
+    }
   }
 
   private flushPendingAudio(): void {
@@ -330,8 +342,14 @@ class GeminiLiveService {
 
   private async finalizeCurrentTurn(): Promise<void> {
     window.clearTimeout(this.turnCompletionTimer);
-    if (getCurrentTurn()) {
-      completeCurrentTurn();
+    if (!getCurrentTurn()) {
+      return;
+    }
+
+    const completedTurn = completeCurrentTurn();
+
+    if (completedTurn) {
+      await this.onTurnFinalized?.(completedTurn);
     }
   }
 
