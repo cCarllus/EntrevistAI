@@ -71,10 +71,6 @@ export function startAudioChunkPolling(
       const chunk = await getAudioChunk();
       const amplitude = calculateAmplitude(chunk);
 
-      if (chunk.length > 0) {
-        console.log('EntrevistAI audio amplitude', amplitude.toFixed(5), 'samples', chunk.length);
-      }
-
       onChunk(chunk, amplitude);
     } catch (error) {
       onError(error instanceof Error ? error : new Error('Erro ao ler chunk de áudio.'));

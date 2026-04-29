@@ -176,7 +176,7 @@ class GeminiLiveService {
     };
 
     socket.onerror = () => {
-      setTranscriptionStatus('error', 'Erro na conexão com Gemini Live.', 'Falha no WebSocket.');
+      setTranscriptionStatus('error', 'Gemini desconectado.', 'Falha no WebSocket.');
     };
 
     socket.onclose = (event) => {
@@ -204,7 +204,7 @@ class GeminiLiveService {
         return;
       }
 
-      setTranscriptionStatus('reconnecting', `Gemini Live caiu: ${reason}. Reconectando...`);
+      setTranscriptionStatus('reconnecting', `Gemini desconectado: ${reason}. Reconectando...`);
       this.reconnectTimer = window.setTimeout(() => {
         this.openSocket('reconnecting');
       }, reconnectDelayMs);

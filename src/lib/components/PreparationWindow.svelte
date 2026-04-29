@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import AudioStatus from './AudioStatus.svelte';
   import FileUploader from './FileUploader.svelte';
   import InterviewInterface from './InterviewInterface.svelte';
@@ -46,8 +47,15 @@
   let saveTimer: number | undefined;
   let settingsSaveTimer: number | undefined;
   let stopAudioPolling: (() => void) | undefined;
+  let shortcutUnlisten: UnlistenFn | undefined;
+  let lastShortcutAction = '';
+  let lastShortcutAt = 0;
   let hasLoaded = false;
   let showInterviewInterface = false;
+
+  type ShortcutPayload = {
+    action: 'toggle_interview' | 'new_suggestion' | 'copy_response' | 'toggle_window';
+  };
 
   $: canStartInterview = Boolean(context.cvText.trim() && context.jobText.trim());
   $: isAudioListening = audioStatus.status === 'Listening';
@@ -60,6 +68,9 @@
   loadInitialData();
 
   onMount(() => {
+    void setupGlobalShortcutListener();
+    window.addEventListener('keydown', handleLocalShortcut);
+
     refreshAudioStatus().then(() => {
       if (audioStatus.status === 'Listening') {
         beginAudioPolling();
@@ -68,6 +79,8 @@
   });
 
   onDestroy(() => {
+    window.removeEventListener('keydown', handleLocalShortcut);
+    shortcutUnlisten?.();
     stopAudioPolling?.();
     geminiLiveService.stop();
   });
@@ -130,6 +143,10 @@
   function updateSettings(update: Partial<AppSettings>) {
     settings = { ...settings, ...update };
     queueSettingsSave();
+  }
+
+  function dismissIntro() {
+    updateSettings({ hasSeenInterviewIntro: true });
   }
 
   function queueContextSave() {
@@ -232,7 +249,7 @@
       geminiLiveService.stop();
       const message =
         error instanceof Error ? error.message : 'Não foi possível iniciar a captura de áudio.';
-      errorMessage = message;
+      errorMessage = friendlyGeminiError(message);
       audioStatus = { ...defaultAudioStatus, status: 'Error', message };
     } finally {
       isAudioBusy = false;
@@ -315,6 +332,88 @@
     resetTranscription();
     resetResponses();
   }
+
+  async function setupGlobalShortcutListener() {
+    if (!isTauri()) {
+      return;
+    }
+
+    try {
+      shortcutUnlisten = await listen<ShortcutPayload>('entrevistai://shortcut', (event) => {
+        void handleShortcutAction(event.payload.action);
+      });
+    } catch (error) {
+      errorMessage =
+        error instanceof Error ? error.message : 'Não foi possível ativar atalhos globais.';
+    }
+  }
+
+  function handleLocalShortcut(event: KeyboardEvent) {
+    if (isTauri()) {
+      return;
+    }
+
+    const key = event.key.toLowerCase();
+
+    if ((event.metaKey || event.ctrlKey) && event.shiftKey && key === 'i') {
+      event.preventDefault();
+      void handleShortcutAction('toggle_interview');
+    }
+  }
+
+  async function handleShortcutAction(action: ShortcutPayload['action']) {
+    if (isDuplicateShortcut(action)) {
+      return;
+    }
+
+    if (action !== 'toggle_interview') {
+      return;
+    }
+
+    if (isAudioListening) {
+      await stopInterviewMode();
+      return;
+    }
+
+    if (!canStartInterview) {
+      errorMessage = 'Carregue currículo e vaga antes de iniciar o modo entrevista.';
+      return;
+    }
+
+    await startInterviewMode();
+  }
+
+  function isDuplicateShortcut(action: string): boolean {
+    const now = performance.now();
+
+    if (lastShortcutAction === action && now - lastShortcutAt < 250) {
+      return true;
+    }
+
+    lastShortcutAction = action;
+    lastShortcutAt = now;
+    return false;
+  }
+
+  function friendlyGeminiError(message: string): string {
+    const normalized = message.toLowerCase();
+
+    if (
+      normalized.includes('gemini') &&
+      (normalized.includes('conex') ||
+        normalized.includes('websocket') ||
+        normalized.includes('network') ||
+        normalized.includes('internet'))
+    ) {
+      return 'Gemini desconectado. Verifique sua internet/API Key e tente iniciar novamente.';
+    }
+
+    return message;
+  }
+
+  function isTauri(): boolean {
+    return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
+  }
 </script>
 
 {#if showInterviewInterface}
@@ -331,6 +430,7 @@
     {stopInterviewMode}
     {clearInterviewHistory}
     {closeInterviewInterface}
+    {updateSettings}
   />
 {:else}
 <main class="min-h-screen px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
@@ -365,6 +465,22 @@
     {#if successMessage}
       <div class="rounded-md border border-focus/30 bg-focus/10 px-4 py-3 text-sm text-teal-100">
         {successMessage}
+      </div>
+    {/if}
+
+    {#if !settings.hasSeenInterviewIntro}
+      <div class="flex flex-col gap-3 rounded-md border border-focus/30 bg-focus/10 px-4 py-3 text-sm leading-6 text-teal-50 sm:flex-row sm:items-center sm:justify-between">
+        <p>
+          Primeira execução: carregue currículo, vaga e API Key. Na entrevista, use Cmd+Shift+I
+          para iniciar/parar e Cmd+Shift+H para esconder/mostrar.
+        </p>
+        <button
+          class="inline-flex min-h-10 items-center justify-center rounded-md border border-focus/40 px-4 text-xs font-bold text-teal-50 transition hover:bg-focus/10"
+          type="button"
+          on:click={dismissIntro}
+        >
+          Entendi
+        </button>
       </div>
     {/if}
 

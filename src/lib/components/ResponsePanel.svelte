@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { fade } from 'svelte/transition';
   import { responseStore, generateNewSuggestion } from '../stores/responseStore';
   import type { AppSettings, InterviewContext } from '../types';
@@ -9,6 +11,13 @@
   export let interviewMode = false;
 
   let copyStatus = '';
+  let shortcutUnlisten: UnlistenFn | undefined;
+  let lastShortcutAction = '';
+  let lastShortcutAt = 0;
+
+  type ShortcutPayload = {
+    action: 'toggle_interview' | 'new_suggestion' | 'copy_response' | 'toggle_window';
+  };
 
   $: canCopy = Boolean($responseStore.current?.answer);
   $: canRequestNewSuggestion =
@@ -16,6 +25,8 @@
     $responseStore.status !== 'thinking';
 
   onMount(() => {
+    void setupGlobalShortcutListener();
+
     const handleShortcut = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
@@ -29,7 +40,7 @@
         }
 
         event.preventDefault();
-        void copyResponse();
+        void handleShortcutAction('copy_response');
         return;
       }
 
@@ -39,7 +50,7 @@
         }
 
         event.preventDefault();
-        void requestNewSuggestion();
+        void handleShortcutAction('new_suggestion');
       }
     };
 
@@ -47,10 +58,40 @@
 
     return () => {
       window.removeEventListener('keydown', handleShortcut);
+      shortcutUnlisten?.();
     };
   });
 
-  async function copyResponse() {
+  async function setupGlobalShortcutListener() {
+    if (!isTauri()) {
+      return;
+    }
+
+    try {
+      shortcutUnlisten = await listen<ShortcutPayload>('entrevistai://shortcut', (event) => {
+        void handleShortcutAction(event.payload.action);
+      });
+    } catch {
+      copyStatus = 'Atalhos globais indisponíveis';
+    }
+  }
+
+  async function handleShortcutAction(action: ShortcutPayload['action']) {
+    if (isDuplicateShortcut(action)) {
+      return;
+    }
+
+    if (action === 'copy_response') {
+      await copyResponse(true);
+      return;
+    }
+
+    if (action === 'new_suggestion') {
+      await requestNewSuggestion();
+    }
+  }
+
+  async function copyResponse(requireVisible = false) {
     const answer = $responseStore.current?.answer;
 
     if (!answer) {
@@ -58,6 +99,10 @@
     }
 
     try {
+      if (requireVisible && isTauri() && !(await getCurrentWindow().isVisible())) {
+        return;
+      }
+
       await navigator.clipboard.writeText(answer);
       copyStatus = 'Resposta copiada';
     } catch {
@@ -80,6 +125,22 @@
     }
 
     return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+  }
+
+  function isDuplicateShortcut(action: string): boolean {
+    const now = performance.now();
+
+    if (lastShortcutAction === action && now - lastShortcutAt < 250) {
+      return true;
+    }
+
+    lastShortcutAction = action;
+    lastShortcutAt = now;
+    return false;
+  }
+
+  function isTauri(): boolean {
+    return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
   }
 </script>
 
@@ -152,7 +213,7 @@
     <button
       class="inline-flex min-h-14 w-full items-center justify-center rounded-md bg-emerald-600 px-5 text-base font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
       disabled={!canCopy}
-      on:click={copyResponse}
+      on:click={() => copyResponse()}
       type="button"
     >
       Copiar Resposta (Cmd/Ctrl + C)

@@ -17,6 +17,9 @@ export interface InterviewContext {
 
 export interface AppSettings {
   geminiApiKey: string;
+  opacityPercent: number;
+  alwaysOnTop: boolean;
+  hasSeenInterviewIntro: boolean;
 }
 
 export const emptyContext = (): InterviewContext => ({
@@ -29,5 +32,8 @@ export const emptyContext = (): InterviewContext => ({
 });
 
 export const emptySettings = (): AppSettings => ({
-  geminiApiKey: ''
+  geminiApiKey: '',
+  opacityPercent: 90,
+  alwaysOnTop: true,
+  hasSeenInterviewIntro: false
 });
