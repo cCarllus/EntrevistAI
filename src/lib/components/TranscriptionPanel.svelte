@@ -35,9 +35,9 @@
 </script>
 
 {#if interviewMode}
-  <section class="relative flex h-full w-[38%] min-w-0 flex-col border-r border-zinc-800/40 bg-zinc-950/30">
+  <section class="floating-surface relative flex h-full w-[38%] min-w-0 flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/95 backdrop-blur-2xl">
     <div
-      class="flex items-center justify-between border-b border-zinc-800/20 bg-zinc-950/40 px-5 py-3"
+      class="flex items-center justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-5 py-3"
     >
       <span class="text-xs tracking-wide text-zinc-500">Live Feed</span>
       <div class="flex h-4 items-end gap-0.5" style={`opacity: ${isAudioActive ? amplitudeTone : 0.22}`}>
@@ -55,7 +55,7 @@
 
     <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 pb-24">
       {#if displayTurns.length === 0}
-        <div class="rounded-xl border border-dashed border-zinc-800/70 p-4">
+        <div class="floating-card rounded-2xl border border-dashed border-zinc-800/70 bg-black/10 p-4">
           <p class="text-xs uppercase tracking-wider text-zinc-500">English:</p>
           <p class="mt-2 text-xs leading-relaxed text-zinc-500">
             Waiting for live transcription.
@@ -99,7 +99,7 @@
             </p>
           </div>
 
-          <div class="relative ml-4 flex flex-col gap-1 rounded-xl border border-green-900/20 bg-green-950/10 p-3">
+          <div class="floating-card relative ml-4 flex flex-col gap-1 rounded-2xl border border-green-900/25 bg-green-950/14 p-3">
             <div class="absolute -left-4 top-4 h-1.5 w-1.5 rounded-full border border-zinc-950 bg-green-500"></div>
             <span class="text-xs tracking-wider text-green-500/80">PT-BR:</span>
             <p class="whitespace-pre-wrap text-sm font-normal leading-relaxed text-green-400">
@@ -118,7 +118,7 @@
       {/if}
     </div>
 
-    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-zinc-950/90 to-transparent"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 rounded-b-3xl bg-gradient-to-t from-zinc-950/90 to-transparent"></div>
   </section>
 {:else}
 <section

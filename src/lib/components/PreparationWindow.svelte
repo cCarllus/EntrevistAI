@@ -513,13 +513,13 @@
   }
 </script>
 
-<main class="relative flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-200 antialiased">
+<main class="relative flex h-screen w-screen overflow-hidden bg-transparent text-zinc-200 antialiased">
   <section
-    class="glass-highlight relative flex h-full w-full flex-col overflow-hidden border border-zinc-800/60 bg-zinc-950/60 shadow-2xl shadow-black backdrop-blur-3xl"
+    class="glass-highlight relative flex h-full w-full flex-col overflow-hidden rounded-[30px] bg-zinc-950 shadow-2xl shadow-black/70 backdrop-blur-3xl"
   >
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <header
-      class="relative z-20 flex h-12 flex-none items-center justify-between border-b border-zinc-800/40 bg-zinc-900/20 px-4"
+      class="relative z-20 flex h-12 flex-none items-center justify-between rounded-t-[30px] border-b border-zinc-800/50 bg-zinc-900/70 px-4"
       data-tauri-drag-region
       on:mousedown={startWindowDrag}
       role="banner"
@@ -565,7 +565,7 @@
 
       <nav class="relative z-10 flex min-w-0 items-center gap-1">
         <button
-          class={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+          class={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors ${
             activeView === 'interview'
               ? 'bg-zinc-800/70 text-zinc-100'
               : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200'
@@ -577,7 +577,7 @@
           Entrevista IA
         </button>
         <button
-          class={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+          class={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors ${
             activeView === 'context'
               ? 'bg-zinc-800/70 text-zinc-100'
               : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200'
@@ -589,7 +589,7 @@
           Contexto da conversa
         </button>
         <button
-          class={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+          class={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs transition-colors ${
             activeView === 'api'
               ? 'bg-zinc-800/70 text-zinc-100'
               : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200'
@@ -609,7 +609,7 @@
           </span>
         {/if}
         <button
-          class="flex items-center justify-center rounded-md p-1.5 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-700"
+          class="flex items-center justify-center rounded-xl p-1.5 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-700"
           disabled={!canStartInterview || isBooting || isAudioBusy || isAudioListening}
           on:click={startInterviewMode}
           title="Start listening"
@@ -618,7 +618,7 @@
           <iconify-icon icon="solar:play-circle-linear" width="16" height="16"></iconify-icon>
         </button>
         <button
-          class="flex items-center justify-center rounded-md p-1.5 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-700"
+          class="flex items-center justify-center rounded-xl p-1.5 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-700"
           disabled={isAudioBusy || !isAudioListening}
           on:click={stopInterviewMode}
           title="Stop listening"
@@ -629,14 +629,14 @@
       </div>
     </header>
 
-    <div class="relative z-10 flex min-h-0 flex-1 overflow-hidden">
+    <div class="relative z-10 flex min-h-0 flex-1 gap-4 overflow-hidden p-4">
       {#if activeView === 'interview'}
         <TranscriptionPanel interviewMode {audioAmplitude} isListening={isAudioListening} />
         <ResponsePanel {context} {settings} interviewMode />
       {:else if activeView === 'context'}
-      <section class="relative flex h-full w-[38%] min-w-[310px] flex-col border-r border-zinc-800/40 bg-zinc-950/30">
+      <section class="floating-surface relative flex h-full w-[38%] min-w-[310px] flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/95 backdrop-blur-2xl">
         <div
-          class="flex items-center justify-between border-b border-zinc-800/20 bg-zinc-950/40 px-5 py-3"
+          class="flex items-center justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-5 py-3"
         >
           <span class="text-xs tracking-wide text-zinc-500">Contexto da conversa</span>
           <div class="flex items-center gap-2 text-[11px] uppercase tracking-wide text-zinc-500">
@@ -662,7 +662,7 @@
               Texto do currículo
             </span>
             <textarea
-              class="min-h-36 w-full resize-none rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-xs leading-5 text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
+              class="min-h-36 w-full resize-none rounded-2xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-xs leading-5 text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
               placeholder="Cole o texto do currículo aqui."
               value={context.cvText}
               on:input={(event) => updateContext({ cvText: event.currentTarget.value })}
@@ -682,7 +682,7 @@
               Descrição da vaga
             </span>
             <textarea
-              class="min-h-32 w-full resize-none rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-xs leading-5 text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
+              class="min-h-32 w-full resize-none rounded-2xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-xs leading-5 text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
               placeholder="Cole a descrição da vaga aqui."
               value={context.jobText}
               on:input={(event) => updateContext({ jobText: event.currentTarget.value })}
@@ -690,11 +690,11 @@
           </label>
         </div>
 
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-zinc-950/90 to-transparent"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 rounded-b-3xl bg-gradient-to-t from-zinc-950/90 to-transparent"></div>
       </section>
 
-      <section class="relative flex h-full min-w-0 flex-1 flex-col bg-zinc-950/10">
-        <div class="flex items-end justify-between border-b border-zinc-800/20 bg-zinc-950/10 px-8 py-4">
+      <section class="floating-surface relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/95 backdrop-blur-2xl">
+        <div class="flex items-end justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-8 py-4">
           <div>
             <h2 class="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
               Chat de contexto
@@ -704,7 +704,7 @@
 
           <div class="flex items-center gap-2">
             <button
-              class="inline-flex min-h-9 items-center gap-2 rounded-md bg-white px-3 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200"
+              class="inline-flex min-h-9 items-center gap-2 rounded-xl bg-white px-3 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200"
               on:click={saveContextNow}
               type="button"
             >
@@ -715,7 +715,7 @@
         </div>
 
         <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-8 pb-28">
-          <section class="flex min-h-[320px] flex-col rounded-xl border border-zinc-800/60 bg-zinc-950/30">
+          <section class="floating-surface flex min-h-[320px] flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/90 backdrop-blur-2xl">
             <div class="border-b border-zinc-800/40 px-4 py-3">
               <h3 class="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Mini Chat de Preparação
@@ -724,14 +724,14 @@
 
             <div class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
               {#if context.chatMessages.length === 0}
-                <div class="rounded-xl border border-dashed border-zinc-800/70 p-4 text-sm leading-6 text-zinc-500">
+                <div class="floating-card rounded-2xl border border-dashed border-zinc-800/70 bg-black/10 p-4 text-sm leading-6 text-zinc-500">
                   Faça uma pergunta como “Me ajude a preparar respostas sobre minha experiência”.
                 </div>
               {/if}
 
               {#each context.chatMessages as message}
                 <article
-                  class={`rounded-xl p-3 text-sm leading-6 ${
+                  class={`floating-card rounded-2xl p-3 text-sm leading-6 ${
                     message.role === 'user'
                       ? 'ml-8 border border-emerald-900/30 bg-emerald-950/20 text-emerald-50'
                       : 'mr-8 border border-zinc-800 bg-black/20 text-zinc-100'
@@ -757,14 +757,14 @@
               <label class="block">
                 <span class="sr-only">Mensagem para o Gemini</span>
                 <textarea
-                  class="min-h-20 w-full resize-none rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-sm leading-6 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
+                  class="min-h-20 w-full resize-none rounded-2xl border border-zinc-800/70 bg-zinc-950/40 p-3 text-sm leading-6 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
                   placeholder="Digite sua pergunta de preparação..."
                   bind:value={userMessage}
                 ></textarea>
               </label>
 
               <button
-                class="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-white px-4 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                class="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-white px-4 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                 disabled={!userMessage.trim() || isChatLoading}
                 type="submit"
               >
@@ -774,11 +774,11 @@
           </section>
         </div>
 
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-zinc-950/95 via-zinc-950/80 to-transparent"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-3xl bg-gradient-to-t from-zinc-950/95 via-zinc-950/80 to-transparent"></div>
       </section>
       {:else}
-        <section class="relative flex h-full w-full flex-col bg-zinc-950/10">
-          <div class="flex items-end justify-between border-b border-zinc-800/20 bg-zinc-950/10 px-8 py-4">
+        <section class="floating-surface relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/95 backdrop-blur-2xl">
+          <div class="flex items-end justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-8 py-4">
             <div>
               <h2 class="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Gemini API
@@ -789,7 +789,7 @@
             </div>
 
             <button
-              class="inline-flex min-h-9 items-center gap-2 rounded-md bg-white px-3 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200"
+              class="inline-flex min-h-9 items-center gap-2 rounded-xl bg-white px-3 text-xs font-medium text-zinc-950 transition hover:bg-zinc-200"
               on:click={saveSettingsNow}
               type="button"
             >
@@ -799,13 +799,13 @@
           </div>
 
           <div class="flex min-h-0 flex-1 items-start justify-center overflow-y-auto p-8">
-            <div class="w-full max-w-xl rounded-2xl border border-zinc-800/70 bg-zinc-950/30 p-6">
+            <div class="floating-surface w-full max-w-xl rounded-3xl border border-zinc-800/70 bg-zinc-950/90 p-6 backdrop-blur-2xl">
               <label class="block">
                 <span class="mb-2 block text-xs uppercase tracking-wider text-zinc-500">
                   API Key do Gemini
                 </span>
                 <input
-                  class="h-12 w-full rounded-xl border border-zinc-800/70 bg-zinc-950/40 px-4 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
+                  class="h-12 w-full rounded-2xl border border-zinc-800/70 bg-zinc-950/40 px-4 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500/50 focus:outline-none"
                   type="password"
                   placeholder="Cole sua API Key"
                   value={settings.geminiApiKey}
@@ -824,7 +824,7 @@
 
   {#if toast}
     <div
-      class={`fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-2xl ${
+      class={`fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-2xl ${
         toast.type === 'error'
           ? 'border-red-400/20 bg-red-950/80 text-red-100'
           : 'border-emerald-400/20 bg-emerald-950/80 text-emerald-100'
@@ -838,7 +838,7 @@
       ></div>
       <p class="min-w-0 flex-1 leading-5">{toast.message}</p>
       <button
-        class="flex h-6 w-6 flex-none items-center justify-center rounded-md text-zinc-400 transition hover:bg-white/10 hover:text-white"
+        class="flex h-6 w-6 flex-none items-center justify-center rounded-xl text-zinc-400 transition hover:bg-white/10 hover:text-white"
         aria-label="Fechar notificação"
         on:click={dismissToast}
         type="button"

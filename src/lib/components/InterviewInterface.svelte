@@ -116,7 +116,7 @@
 </script>
 
 <main
-  class="relative flex h-screen min-h-[472px] min-w-0 items-center justify-end overflow-hidden bg-zinc-950 p-6 text-zinc-200 antialiased sm:p-12"
+  class="relative flex h-screen min-h-[472px] min-w-0 items-center justify-end overflow-hidden bg-transparent p-6 text-zinc-200 antialiased sm:p-12"
   style={`opacity: ${panelOpacity}`}
 >
   <section

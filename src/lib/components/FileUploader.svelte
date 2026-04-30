@@ -35,7 +35,7 @@
   }
 </script>
 
-<div class="rounded-xl border border-zinc-800/70 bg-zinc-950/30 p-3">
+<div class="floating-card rounded-2xl border border-zinc-800/70 bg-zinc-950/90 p-3 backdrop-blur-xl">
   <div class="flex min-w-0 flex-col gap-3">
     <div class="min-w-0">
       <p class="text-sm font-medium text-zinc-100">{label}</p>
@@ -49,7 +49,7 @@
     </div>
 
     <label
-      class="inline-flex min-h-9 w-fit max-w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-zinc-700 px-3 text-xs font-medium text-zinc-300 transition hover:border-emerald-500/50 hover:bg-emerald-950/20 hover:text-emerald-400"
+      class="inline-flex min-h-9 w-fit max-w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-xl border border-zinc-700 px-3 text-xs font-medium text-zinc-300 transition hover:border-emerald-500/50 hover:bg-emerald-950/20 hover:text-emerald-400"
       for={inputId}
     >
       {isLoading ? 'Extraindo...' : 'Anexar arquivo'}

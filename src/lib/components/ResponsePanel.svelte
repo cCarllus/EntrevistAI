@@ -203,8 +203,8 @@
 </script>
 
 {#if interviewMode}
-  <section class="relative flex h-full min-w-0 flex-1 flex-col bg-zinc-950/10">
-    <div class="flex items-end justify-between border-b border-zinc-800/20 bg-zinc-950/10 px-8 py-4">
+  <section class="floating-surface relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-950/95 backdrop-blur-2xl">
+    <div class="flex items-end justify-between border-b border-zinc-800/50 bg-zinc-950/80 px-8 py-4">
       <div>
         <h2 class="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
           Suggested Answer
@@ -213,7 +213,7 @@
       </div>
 
       <button
-        class="flex items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-700/50 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:cursor-not-allowed disabled:text-zinc-700"
+        class="flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-700/50 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:cursor-not-allowed disabled:text-zinc-700"
         on:click={requestNewSuggestion}
         type="button"
       >
@@ -224,7 +224,7 @@
 
     <div class="min-h-0 flex-1 overflow-y-auto p-8 pb-24">
       {#if $responseStore.status === 'thinking'}
-        <div class="flex min-h-44 flex-col justify-center rounded-xl border border-zinc-800/40 bg-zinc-950/30 p-6">
+        <div class="floating-card flex min-h-44 flex-col justify-center rounded-3xl border border-zinc-800/70 bg-zinc-950/90 p-6">
           <p class="text-xs font-medium uppercase tracking-wide text-amber-300/80">Thinking</p>
           <div class="mt-4 flex gap-1">
             <div class="dot-typing h-2 w-2 rounded-full bg-zinc-500"></div>
@@ -233,7 +233,7 @@
           </div>
         </div>
       {:else if $responseStore.error}
-        <div class="rounded-xl border border-red-400/20 bg-red-500/10 p-5 text-sm leading-6 text-red-100">
+        <div class="floating-card rounded-3xl border border-red-400/20 bg-red-500/10 p-5 text-sm leading-6 text-red-100">
           {$responseStore.error}
         </div>
       {:else if $responseStore.current}
@@ -267,7 +267,7 @@
           </div>
         </div>
       {:else}
-        <div class="rounded-xl border border-dashed border-zinc-800/70 p-6">
+        <div class="floating-card rounded-3xl border border-dashed border-zinc-800/70 bg-black/10 p-6">
           <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Suggested Answer</p>
           <p class="mt-3 text-sm leading-7 text-zinc-500">
             Waiting for a real interview question before generating a suggested answer.
@@ -276,7 +276,7 @@
       {/if}
 
       {#if $responseStore.current?.question}
-        <div class="mt-8 rounded-lg border border-zinc-800/50 bg-black/20 p-4">
+        <div class="floating-card mt-8 rounded-2xl border border-zinc-800/50 bg-black/20 p-4">
           <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Last Question</p>
           <p class="mt-2 text-sm leading-6 text-zinc-300">{$responseStore.current.question}</p>
         </div>
@@ -289,7 +289,7 @@
 
     {#if $responseStore.current}
       <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-gradient-to-t from-zinc-950/95 via-zinc-950/80 to-transparent pb-6"
+        class="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end justify-center rounded-b-3xl bg-gradient-to-t from-zinc-950/95 via-zinc-950/80 to-transparent pb-6"
       >
         <button
           class="pointer-events-auto flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-zinc-950 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all hover:scale-[1.02] hover:bg-zinc-200 active:scale-[0.98]"

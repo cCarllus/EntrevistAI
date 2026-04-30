@@ -10,6 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "EntrevistAI",
@@ -20,6 +21,8 @@
         "resizable": false,
         "maximizable": false,
         "decorations": false,
+        "transparent": true,
+        "backgroundColor": "#00000000",
         "alwaysOnTop": true,
         "visibleOnAllWorkspaces": true,
         "label": "main"
