@@ -14,6 +14,7 @@
   let shortcutUnlisten: UnlistenFn | undefined;
   let lastShortcutAction = '';
   let lastShortcutAt = 0;
+  let answeredStatus = '';
 
   type ShortcutPayload = {
     action: 'toggle_interview' | 'new_suggestion' | 'copy_response' | 'toggle_window';
@@ -23,6 +24,12 @@
   $: canRequestNewSuggestion =
     Boolean($responseStore.current || $responseStore.lastQuestion) &&
     $responseStore.status !== 'thinking';
+  $: currentAnswer = $responseStore.current?.answer ?? '';
+  $: answerParagraphs = currentAnswer
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  $: responseKeywords = extractKeywords(currentAnswer);
 
   onMount(() => {
     void setupGlobalShortcutListener();
@@ -112,7 +119,58 @@
 
   async function requestNewSuggestion() {
     copyStatus = '';
+    answeredStatus = '';
     await generateNewSuggestion(settings.geminiApiKey, context);
+  }
+
+  function markAnswered() {
+    answeredStatus = 'Marcado como respondido';
+    window.setTimeout(() => {
+      answeredStatus = '';
+    }, 1800);
+  }
+
+  function extractKeywords(answer: string): string[] {
+    const stopWords = new Set([
+      'about',
+      'after',
+      'along',
+      'also',
+      'because',
+      'before',
+      'could',
+      'during',
+      'from',
+      'into',
+      'that',
+      'their',
+      'then',
+      'there',
+      'this',
+      'through',
+      'under',
+      'with',
+      'would'
+    ]);
+
+    const unique = new Map<string, string>();
+
+    for (const match of answer.matchAll(/[A-Za-z][A-Za-z0-9+.#-]{3,}/g)) {
+      const word = match[0];
+      const key = word.toLowerCase();
+
+      if (stopWords.has(key) || unique.has(key)) {
+        continue;
+      }
+
+      unique.set(key, word);
+
+      if (unique.size === 4) {
+        break;
+      }
+    }
+
+    return [...unique.values()];
   }
 
   function hasSelectedText(): boolean {
@@ -144,6 +202,107 @@
   }
 </script>
 
+{#if interviewMode}
+  <section class="relative flex h-full min-w-0 flex-1 flex-col bg-zinc-950/10">
+    <div class="flex items-end justify-between border-b border-zinc-800/20 bg-zinc-950/10 px-8 py-4">
+      <div>
+        <h2 class="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
+          Suggested Answer
+        </h2>
+        <p class="text-xs text-zinc-500">Read naturally. Pause at punctuation.</p>
+      </div>
+
+      <button
+        class="flex items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-700/50 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:cursor-not-allowed disabled:text-zinc-700"
+        on:click={requestNewSuggestion}
+        type="button"
+      >
+        <iconify-icon icon="solar:refresh-linear" width="14" height="14"></iconify-icon>
+        Regenerate
+      </button>
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-y-auto p-8 pb-24">
+      {#if $responseStore.status === 'thinking'}
+        <div class="flex min-h-44 flex-col justify-center rounded-xl border border-zinc-800/40 bg-zinc-950/30 p-6">
+          <p class="text-xs font-medium uppercase tracking-wide text-amber-300/80">Thinking</p>
+          <div class="mt-4 flex gap-1">
+            <div class="dot-typing h-2 w-2 rounded-full bg-zinc-500"></div>
+            <div class="dot-typing h-2 w-2 rounded-full bg-zinc-500"></div>
+            <div class="dot-typing h-2 w-2 rounded-full bg-zinc-500"></div>
+          </div>
+        </div>
+      {:else if $responseStore.error}
+        <div class="rounded-xl border border-red-400/20 bg-red-500/10 p-5 text-sm leading-6 text-red-100">
+          {$responseStore.error}
+        </div>
+      {:else if $responseStore.current}
+        <article class="max-w-none" in:fade={{ duration: 160 }}>
+          {#each answerParagraphs as paragraph}
+            <p class="mb-5 whitespace-pre-wrap text-sm font-normal leading-loose tracking-wide text-zinc-100 sm:text-base">
+              {paragraph}
+            </p>
+          {/each}
+        </article>
+
+        <div class="mt-10 border-t border-zinc-800/40 pt-6">
+          <span class="mb-3 block text-xs uppercase tracking-wider text-zinc-500">
+            Key Metrics to Hit
+          </span>
+          <div class="flex flex-wrap gap-2">
+            {#each responseKeywords as keyword}
+              <span
+                class="rounded border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300"
+              >
+                {keyword}
+              </span>
+            {/each}
+            {#if responseKeywords.length === 0}
+              <span
+                class="rounded border border-emerald-900/50 bg-emerald-950/30 px-2.5 py-1 text-xs font-medium text-emerald-400"
+              >
+                Answer ready
+              </span>
+            {/if}
+          </div>
+        </div>
+      {:else}
+        <div class="rounded-xl border border-dashed border-zinc-800/70 p-6">
+          <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Suggested Answer</p>
+          <p class="mt-3 text-sm leading-7 text-zinc-500">
+            Waiting for a real interview question before generating a suggested answer.
+          </p>
+        </div>
+      {/if}
+
+      {#if $responseStore.current?.question}
+        <div class="mt-8 rounded-lg border border-zinc-800/50 bg-black/20 p-4">
+          <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Last Question</p>
+          <p class="mt-2 text-sm leading-6 text-zinc-300">{$responseStore.current.question}</p>
+        </div>
+      {/if}
+
+      {#if copyStatus || answeredStatus}
+        <p class="mt-4 text-xs font-medium text-emerald-400">{copyStatus || answeredStatus}</p>
+      {/if}
+    </div>
+
+    {#if $responseStore.current}
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-gradient-to-t from-zinc-950/95 via-zinc-950/80 to-transparent pb-6"
+      >
+        <button
+          class="pointer-events-auto flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-medium text-zinc-950 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all hover:scale-[1.02] hover:bg-zinc-200 active:scale-[0.98]"
+          on:click={markAnswered}
+          type="button"
+        >
+          <iconify-icon icon="solar:check-read-linear" width="16" height="16"></iconify-icon>
+          Mark as Answered
+        </button>
+      </div>
+    {/if}
+  </section>
+{:else}
 <section
   class={`flex min-h-0 flex-col rounded-lg border border-white/10 bg-zinc-900/95 ${
     interviewMode ? 'h-full' : 'min-h-[320px] shadow-2xl shadow-black/20'
@@ -229,3 +388,4 @@
     </button>
   </div>
 </section>
+{/if}

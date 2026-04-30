@@ -25,14 +25,19 @@ const transcriptionWatchdogMs = 20000;
 const voiceAmplitudeThreshold = 0.01;
 
 const systemInstruction =
-  'Você é um assistente de entrevistas em tempo real.\n' +
-  'Transcreva o áudio em inglês com precisão.\n' +
-  'IMEDIATAMENTE após cada transcrição, forneça a tradução para português brasileiro (PT-BR) de forma clara e natural.\n' +
-  'Trabalhe de forma incremental: não espere o fim de uma resposta longa para traduzir o trecho já entendido.\n' +
-  'Formato exato de resposta:\n' +
-  'Inglês: [transcrição]\n' +
-  'Português: [tradução completa]\n' +
-  'Nunca explique seu processo, nunca use markdown e nunca diga que está iniciando, analisando ou transcrevendo.';
+  'Você é um tradutor de entrevistas em tempo real.\n' +
+  'Seu ÚNICO trabalho: ouvir o áudio em inglês e fornecer a tradução COMPLETA para português brasileiro.\n' +
+  '\n' +
+  'REGRAS ABSOLUTAS:\n' +
+  '1. SEMPRE traduza TODO o conteúdo falado, sem omitir nada.\n' +
+  '2. A tradução PT-BR deve ser COMPLETA — nunca pare no meio.\n' +
+  '3. NUNCA misture inglês na linha da tradução.\n' +
+  '4. NUNCA explique, comente ou descreva o que está fazendo.\n' +
+  '5. NUNCA use markdown.\n' +
+  '\n' +
+  'Formato EXATO:\n' +
+  'Inglês: [transcrição completa do áudio]\n' +
+  'Português: [tradução completa e natural em PT-BR]';
 
 type ServerPart = {
   text?: string;
@@ -218,7 +223,7 @@ class GeminiLiveService {
       generationConfig: {
         responseModalities: [candidate.responseModality],
         temperature: 0.1,
-        maxOutputTokens: 1000
+        maxOutputTokens: 2048
       },
       systemInstruction: {
         parts: [{ text: systemInstruction }]
@@ -493,17 +498,17 @@ function formatCloseReason(event: CloseEvent): string {
 }
 
 function looksLikeProcessLog(text: string): boolean {
-  const normalized = text.toLowerCase();
+  const normalized = text.toLowerCase().trim();
+
+  // Only filter short meta-commentary sentences from the model, not real content.
+  if (normalized.length > 80) {
+    return false;
+  }
 
   return (
-    normalized.includes('initiating') ||
-    normalized.includes('commencing') ||
-    normalized.includes('transcribing') ||
-    normalized.includes('transcription') ||
-    normalized.includes('translation') ||
-    normalized.includes('analysis') ||
-    normalized.includes('i will') ||
-    normalized.includes("i'll")
+    /^(initiating|commencing|starting|beginning)\b/.test(normalized) ||
+    /^(i will |i'll |let me )/.test(normalized) ||
+    /^(transcribing|translating|analyzing|processing)\b/.test(normalized)
   );
 }
 
@@ -530,13 +535,16 @@ function appendTranslatedResponse(text: string): void {
 }
 
 function parseBilingualResponse(text: string): { hasFormat: boolean; portuguese: string } {
-  const portugueseMatch = text.match(/(?:^|\n)\s*Portugu[eê]s:\s*([\s\S]*)$/i);
+  // Match various PT-BR labels the model might use
+  const portugueseMatch = text.match(
+    /(?:^|\n)\s*(?:Portugu[eê]s|PT-BR|Tradu[çc][ãa]o):\s*([\s\S]*)$/i
+  );
 
   if (portugueseMatch) {
     return { hasFormat: true, portuguese: (portugueseMatch[1] ?? '').trim() };
   }
 
-  return { hasFormat: /(?:^|\n)\s*Ingl[eê]s:/i.test(text), portuguese: '' };
+  return { hasFormat: /(?:^|\n)\s*(?:Ingl[eê]s|English):/i.test(text), portuguese: '' };
 }
 
 function isModelSetupFailure(reason: string): boolean {

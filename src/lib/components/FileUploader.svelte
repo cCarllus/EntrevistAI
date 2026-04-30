@@ -35,18 +35,21 @@
   }
 </script>
 
-<div class="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <p class="text-sm font-semibold text-white">{label}</p>
-      <p class="mt-1 text-xs leading-5 text-slate-400">{description}</p>
+<div class="rounded-xl border border-zinc-800/70 bg-zinc-950/30 p-3">
+  <div class="flex min-w-0 flex-col gap-3">
+    <div class="min-w-0">
+      <p class="text-sm font-medium text-zinc-100">{label}</p>
+      <p class="mt-1 text-xs leading-5 text-zinc-500">{description}</p>
       {#if fileName}
-        <p class="mt-2 text-xs text-focus">Arquivo carregado: {fileName}</p>
+        <p class="mt-2 min-w-0 break-words text-xs leading-5 text-emerald-400">
+          <span class="block text-emerald-500/80">Arquivo carregado:</span>
+          <span class="break-all">{fileName}</span>
+        </p>
       {/if}
     </div>
 
     <label
-      class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-focus/40 px-4 text-sm font-semibold text-focus transition hover:border-focus hover:bg-focus/10"
+      class="inline-flex min-h-9 w-fit max-w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-zinc-700 px-3 text-xs font-medium text-zinc-300 transition hover:border-emerald-500/50 hover:bg-emerald-950/20 hover:text-emerald-400"
       for={inputId}
     >
       {isLoading ? 'Extraindo...' : 'Anexar arquivo'}

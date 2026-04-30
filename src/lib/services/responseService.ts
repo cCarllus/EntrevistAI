@@ -47,7 +47,7 @@ export async function generateInterviewResponse(input: GenerateResponseInput): P
       ],
       generationConfig: {
         temperature: input.previousResponses?.length ? 0.65 : 0.45,
-        maxOutputTokens: 320
+        maxOutputTokens: 600
       }
     })
   });
@@ -71,8 +71,10 @@ export async function generateInterviewResponse(input: GenerateResponseInput): P
 
 function buildResponsePrompt(input: GenerateResponseInput): string {
   return [
-    'Você é um excelente coach de entrevistas para candidatos brasileiros com inglês intermediário.',
-    'Use o contexto abaixo para responder de forma natural.',
+    'Você é o candidato numa entrevista de emprego em inglês.',
+    'Gere EXATAMENTE o que o candidato deveria dizer em voz alta como resposta.',
+    'NÃO explique, NÃO cite a pergunta, NÃO use aspas, NÃO comece com "He said" ou "She asked".',
+    'A resposta deve ser uma fala direta, natural e pronta para ser lida em voz alta.',
     '',
     'CV do candidato:',
     input.context.cvText || 'Ainda não informado.',
@@ -83,15 +85,16 @@ function buildResponsePrompt(input: GenerateResponseInput): string {
     'Histórico da conversa:',
     input.history || 'Sem histórico anterior.',
     '',
-    'Última pergunta da entrevistadora:',
+    'O entrevistador acabou de dizer:',
     input.question,
     '',
-    'Responda em inglês:',
+    'Gere a resposta em inglês que o candidato deve falar:',
     '',
     '- Máximo 4-6 frases',
-    '- Linguagem simples e natural (não robótica)',
+    '- Linguagem simples e natural, como uma conversa real',
     '- Confiante, mas humilde',
-    '- Use STAR method quando for útil',
-    '- Resposta pronta para falar em voz alta'
+    '- Use dados do CV quando relevante',
+    '- NÃO inclua introduções como "Sure!" ou "Great question!"',
+    '- Comece direto com a resposta substantiva'
   ].join('\n');
 }
