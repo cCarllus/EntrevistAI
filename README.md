@@ -151,7 +151,3 @@ spec/                Documentos de especificação do projeto
 - A API key é salva localmente nas configurações do app.
 - A captura de áudio do sistema está implementada para macOS. Em outros sistemas, o backend retorna uma mensagem indicando que a captura exige macOS 13+ com ScreenCaptureKit.
 - O app depende da disponibilidade dos modelos Gemini configurados no código.
-
-## Licença
-
-Adicione uma licença antes de publicar como open source. MIT e Apache-2.0 são opções comuns para projetos desse tipo.
